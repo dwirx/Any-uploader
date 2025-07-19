@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { Upload, Image, Copy, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, Image, Copy, Check, AlertCircle, Loader2, Trash2, Filter } from 'lucide-react';
 import axios from 'axios';
 
 interface UploadedImage {
@@ -62,6 +62,33 @@ export default function Home() {
   const [showFullUrl, setShowFullUrl] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<'freeimage' | 'imgbb' | 'gofile'>('freeimage');
   const [filterProvider, setFilterProvider] = useState<'all' | 'freeimage' | 'imgbb' | 'gofile'>('all');
+
+  // Load data from localStorage on component mount
+  useEffect(() => {
+    const savedImages = localStorage.getItem('uploadedImages');
+    const savedProvider = localStorage.getItem('selectedProvider');
+    
+    if (savedImages) {
+      try {
+        setUploadedImages(JSON.parse(savedImages));
+      } catch (error) {
+        console.error('Error loading saved images:', error);
+      }
+    }
+    
+    if (savedProvider) {
+      setSelectedProvider(savedProvider as 'freeimage' | 'imgbb' | 'gofile');
+    }
+  }, []);
+
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('uploadedImages', JSON.stringify(uploadedImages));
+  }, [uploadedImages]);
+
+  useEffect(() => {
+    localStorage.setItem('selectedProvider', selectedProvider);
+  }, [selectedProvider]);
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setIsUploading(true);
@@ -147,34 +174,35 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-2 sm:p-4">
       <div className="max-w-4xl mx-auto">
-                 {/* Header */}
-         <div className="text-center mb-8">
-           <h1 className="text-4xl font-bold text-gray-800 mb-2">
-             Multi-Image Host
-           </h1>
-           <p className="text-gray-600 mb-4">
-             Upload and share your images instantly using multiple providers
-           </p>
+        {/* Header */}
+        <div className="text-center mb-4 sm:mb-8">
+          <h1 className="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">
+            Multi-Image Host
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600 mb-4">
+            Upload and share your images instantly using multiple providers
+          </p>
            
            {/* Provider Selection */}
-           <div className="bg-white rounded-lg shadow-md p-4 max-w-md mx-auto mb-4">
-             <h3 className="text-sm font-medium text-gray-700 mb-3">Choose Upload Provider:</h3>
-             <div className="grid grid-cols-3 gap-2">
+           <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 max-w-md mx-auto mb-4">
+             <h3 className="text-xs sm:text-sm font-medium text-gray-700 mb-2 sm:mb-3">Choose Upload Provider:</h3>
+             <div className="grid grid-cols-3 gap-1 sm:gap-2">
                <button
                  onClick={() => setSelectedProvider('freeimage')}
-                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                 className={`px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                    selectedProvider === 'freeimage'
                      ? 'bg-blue-500 text-white'
                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                  }`}
                >
-                 FreeImage.host
+                 <span className="hidden sm:inline">FreeImage.host</span>
+                 <span className="sm:hidden">FreeImage</span>
                </button>
                <button
                  onClick={() => setSelectedProvider('imgbb')}
-                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                 className={`px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                    selectedProvider === 'imgbb'
                      ? 'bg-blue-500 text-white'
                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -184,7 +212,7 @@ export default function Home() {
                </button>
                <button
                  onClick={() => setSelectedProvider('gofile')}
-                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                 className={`px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                    selectedProvider === 'gofile'
                      ? 'bg-blue-500 text-white'
                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -206,7 +234,7 @@ export default function Home() {
            <div className="bg-green-50 border border-green-200 rounded-lg p-3 max-w-md mx-auto">
              <div className="flex items-center justify-center space-x-2 text-green-700">
                <Check className="w-4 h-4" />
-               <span className="text-sm font-medium">Premium Upload - Original Quality Preserved</span>
+               <span className="text-xs sm:text-sm font-medium">Premium Upload - Original Quality Preserved</span>
              </div>
              <p className="text-xs text-green-600 mt-1">
                All images uploaded with maximum quality and full resolution
@@ -217,44 +245,45 @@ export default function Home() {
         {/* Upload Area */}
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200 ${
+          className={`border-2 border-dashed rounded-lg p-4 sm:p-8 text-center cursor-pointer transition-all duration-200 ${
             isDragActive
               ? 'border-blue-500 bg-blue-50'
               : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
           }`}
         >
           <input {...getInputProps()} />
-                     <div className="flex flex-col items-center space-y-4">
-             {isUploading ? (
-               <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
-             ) : (
-               <Upload className="w-12 h-12 text-gray-400" />
-             )}
-             <div>
-               <p className="text-lg font-medium text-gray-700">
-                 {isDragActive
-                   ? 'Drop the files here...'
-                   : isUploading
-                   ? `Uploading to ${selectedProvider === 'imgbb' ? 'ImgBB' : 'FreeImage.host'}...`
-                   : 'Drag & drop images here, or click to select'}
-               </p>
-               <p className="text-sm text-gray-500 mt-1">
-                 {selectedProvider === 'freeimage' 
-                   ? 'Supports: JPG, PNG, GIF, BMP, WEBP (max 128MB) - Original quality preserved'
-                   : selectedProvider === 'imgbb'
-                   ? 'Supports: JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF (max 32MB) - Original quality preserved'
-                   : 'Supports: ALL file types (unlimited size) - Universal file hosting'
-                 }
-               </p>
-             </div>
+          <div className="flex flex-col items-center space-y-3 sm:space-y-4">
+            {isUploading ? (
+              <Loader2 className="w-8 h-8 sm:w-12 sm:h-12 text-blue-500 animate-spin" />
+            ) : (
+              <Upload className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
+            )}
+            <div>
+              <p className="text-sm sm:text-lg font-medium text-gray-700">
+                {isDragActive
+                  ? 'Drop the files here...'
+                  : isUploading
+                  ? `Uploading to ${selectedProvider === 'imgbb' ? 'ImgBB' : 
+                     selectedProvider === 'gofile' ? 'Gofile' : 'FreeImage.host'}...`
+                  : 'Drag & drop images here, or click to select'}
+              </p>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                {selectedProvider === 'freeimage' 
+                  ? 'Supports: JPG, PNG, GIF, BMP, WEBP (max 128MB) - Original quality preserved'
+                  : selectedProvider === 'imgbb'
+                  ? 'Supports: JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF (max 32MB) - Original quality preserved'
+                  : 'Supports: ALL file types (unlimited size) - Universal file hosting'
+                }
+              </p>
+            </div>
              
              {/* Upload Progress */}
              {isUploading && Object.keys(uploadProgress).length > 0 && (
                <div className="w-full max-w-md space-y-2">
                  {Object.entries(uploadProgress).map(([fileName, progress]) => (
                    <div key={fileName} className="bg-white rounded-lg p-3 border">
-                     <div className="flex justify-between items-center mb-2">
-                       <span className="text-sm font-medium text-gray-700 truncate">
+                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 space-y-1 sm:space-y-0">
+                       <span className="text-xs sm:text-sm font-medium text-gray-700 truncate">
                          {fileName}
                        </span>
                        <div className="flex items-center space-x-2">
@@ -262,7 +291,7 @@ export default function Home() {
                            {selectedProvider === 'imgbb' ? 'ImgBB' : 
                             selectedProvider === 'gofile' ? 'Gofile' : 'FreeImage'}
                          </span>
-                         <span className="text-sm text-gray-500">{progress}%</span>
+                         <span className="text-xs sm:text-sm text-gray-500">{progress}%</span>
                        </div>
                      </div>
                      <div className="w-full bg-gray-200 rounded-full h-2">
@@ -280,27 +309,27 @@ export default function Home() {
 
         {/* Error Message */}
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
-            <AlertCircle className="w-5 h-5 text-red-500" />
-            <span className="text-red-700">{error}</span>
+          <div className="mt-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2">
+            <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0" />
+            <span className="text-sm sm:text-base text-red-700">{error}</span>
           </div>
         )}
 
                  {/* Uploaded Images */}
          {uploadedImages.length > 0 && (
-           <div className="mt-8">
-             <div className="flex justify-between items-center mb-4">
-               <h2 className="text-2xl font-semibold text-gray-800">
+           <div className="mt-6 sm:mt-8">
+             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 space-y-3 sm:space-y-0">
+               <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                  Uploaded Images ({uploadedImages.length})
                </h2>
-               <div className="flex items-center space-x-4">
+               <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                  {/* Filter by Provider */}
                  <div className="flex items-center space-x-2">
-                   <span className="text-sm text-gray-600">Filter:</span>
+                   <span className="text-xs sm:text-sm text-gray-600">Filter:</span>
                    <select
                      value={filterProvider}
                      onChange={(e) => setFilterProvider(e.target.value as 'all' | 'freeimage' | 'imgbb' | 'gofile')}
-                     className="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                     className="text-xs sm:text-sm border border-gray-300 rounded-lg px-2 sm:px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                    >
                      <option value="all">All Providers</option>
                      <option value="freeimage">FreeImage.host</option>
@@ -310,14 +339,15 @@ export default function Home() {
                  </div>
                  <button
                    onClick={clearAll}
-                   className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
+                   className="flex items-center space-x-1 px-3 sm:px-4 py-2 text-xs sm:text-sm text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors"
                  >
-                   Clear All
+                   <Trash2 className="w-3 h-3 sm:w-4 sm:h-4" />
+                   <span>Clear All</span>
                  </button>
                </div>
              </div>
             
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                {uploadedImages
                  .filter(image => filterProvider === 'all' || image.provider === filterProvider)
                  .map((image, index) => (
@@ -325,71 +355,71 @@ export default function Home() {
                   key={index}
                   className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow"
                 >
-                                     <div className="relative">
-                     <img
-                       src={image.thumb?.url || image.url}
-                       alt={image.original_filename || image.filename || 'Uploaded image'}
-                       className="w-full h-48 object-cover"
-                       onError={(e) => {
-                         // Fallback to original URL if thumbnail fails
-                         const target = e.target as HTMLImageElement;
-                         if (target.src !== image.url) {
-                           target.src = image.url;
-                         }
-                       }}
-                     />
-                     <div className="absolute top-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                       {image.size_formatted || 'Unknown'}
-                     </div>
-                     <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                       {image.provider === 'imgbb' ? 'ImgBB' : 
-                        image.provider === 'gofile' ? 'Gofile' : 'FreeImage'}
-                     </div>
-                   </div>
+                  <div className="relative">
+                    <img
+                      src={image.thumb?.url || image.url}
+                      alt={image.original_filename || image.filename || 'Uploaded image'}
+                      className="w-full h-32 sm:h-48 object-cover"
+                      onError={(e) => {
+                        // Fallback to original URL if thumbnail fails
+                        const target = e.target as HTMLImageElement;
+                        if (target.src !== image.url) {
+                          target.src = image.url;
+                        }
+                      }}
+                    />
+                    <div className="absolute top-1 sm:top-2 right-1 sm:right-2 bg-black bg-opacity-50 text-white text-xs px-1 sm:px-2 py-1 rounded">
+                      {image.size_formatted || 'Unknown'}
+                    </div>
+                    <div className="absolute top-1 sm:top-2 left-1 sm:left-2 bg-blue-500 text-white text-xs px-1 sm:px-2 py-1 rounded">
+                      {image.provider === 'imgbb' ? 'ImgBB' : 
+                       image.provider === 'gofile' ? 'Gofile' : 'FreeImage'}
+                    </div>
+                  </div>
                   
-                                     <div className="p-4">
-                     <h3 className="font-medium text-gray-800 truncate mb-2">
-                       {image.original_filename || image.filename || 'Uploaded Image'}
-                     </h3>
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-medium text-gray-800 truncate mb-2 text-sm sm:text-base">
+                      {image.original_filename || image.filename || 'Uploaded Image'}
+                    </h3>
+                    
+                    {/* Image Quality Info */}
+                    <div className="mb-3 space-y-1">
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-500">Dimensions:</span>
+                        <span className="text-gray-700 font-medium">
+                          {image.width || 'Unknown'} × {image.height || 'Unknown'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-500">File Size:</span>
+                        <span className="text-gray-700 font-medium">{image.size_formatted || 'Unknown'}</span>
+                      </div>
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-500">Format:</span>
+                        <span className="text-gray-700 font-medium">{image.mime ? image.mime.toUpperCase() : 'Unknown'}</span>
+                      </div>
+                      <div className="flex justify-between text-xs sm:text-sm">
+                        <span className="text-gray-500">Quality:</span>
+                        <span className="text-green-600 font-medium">
+                          {image.bits || 'Unknown'} bit{image.channels ? ` (${image.channels} channels)` : ''}
+                        </span>
+                      </div>
+                    </div>
                      
-                     {/* Image Quality Info */}
-                     <div className="mb-3 space-y-1">
-                       <div className="flex justify-between text-sm">
-                         <span className="text-gray-500">Dimensions:</span>
-                         <span className="text-gray-700 font-medium">
-                           {image.width || 'Unknown'} × {image.height || 'Unknown'}
-                         </span>
-                       </div>
-                       <div className="flex justify-between text-sm">
-                         <span className="text-gray-500">File Size:</span>
-                         <span className="text-gray-700 font-medium">{image.size_formatted || 'Unknown'}</span>
-                       </div>
-                       <div className="flex justify-between text-sm">
-                         <span className="text-gray-500">Format:</span>
-                         <span className="text-gray-700 font-medium">{image.mime ? image.mime.toUpperCase() : 'Unknown'}</span>
-                       </div>
-                       <div className="flex justify-between text-sm">
-                         <span className="text-gray-500">Quality:</span>
-                         <span className="text-green-600 font-medium">
-                           {image.bits || 'Unknown'} bit{image.channels ? ` (${image.channels} channels)` : ''}
-                         </span>
-                       </div>
-                     </div>
-                     
-                                          <div className="space-y-2">
-                       <button
-                         onClick={() => copyToClipboard(image.url)}
-                         className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors"
-                       >
-                         {copiedUrl === image.url ? (
-                           <Check className="w-4 h-4" />
-                         ) : (
-                           <Copy className="w-4 h-4" />
-                         )}
-                         <span>
-                           {copiedUrl === image.url ? 'Copied!' : 'Copy Direct URL'}
-                         </span>
-                       </button>
+                                         <div className="space-y-2">
+                      <button
+                        onClick={() => copyToClipboard(image.url)}
+                        className="w-full flex items-center justify-center space-x-2 px-3 py-2 bg-blue-500 text-white text-xs sm:text-sm rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        {copiedUrl === image.url ? (
+                          <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+                        ) : (
+                          <Copy className="w-3 h-3 sm:w-4 sm:h-4" />
+                        )}
+                        <span>
+                          {copiedUrl === image.url ? 'Copied!' : 'Copy Direct URL'}
+                        </span>
+                      </button>
                        
                        <div className="grid grid-cols-2 gap-2">
                          {image.medium && image.medium.url !== image.url && (
