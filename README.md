@@ -1,6 +1,6 @@
 # Multi-Image Host
 
-A modern web application for uploading and sharing images using multiple providers (Freeimage.host and ImgBB). Built with Next.js, TypeScript, and Tailwind CSS.
+A modern web application for uploading and sharing images and files using multiple providers (Freeimage.host, ImgBB, and Gofile). Built with Next.js, TypeScript, and Tailwind CSS.
 
 ## Features
 
@@ -12,8 +12,9 @@ A modern web application for uploading and sharing images using multiple provide
 - 🖼️ **Multiple Formats**: Supports JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF
 - 📊 **Image Details**: Shows file size, dimensions, and thumbnails
 - 🚀 **Fast Upload**: Optimized for quick image processing
-- 🔄 **Multi-Provider**: Support for Freeimage.host and ImgBB
-- 🎯 **Provider Selection**: Choose your preferred image hosting service
+- 🔄 **Multi-Provider**: Support for Freeimage.host, ImgBB, and Gofile
+- 🎯 **Provider Selection**: Choose your preferred hosting service
+- 📁 **Universal File Support**: Upload any file type with Gofile
 
 ## Tech Stack
 
@@ -23,7 +24,7 @@ A modern web application for uploading and sharing images using multiple provide
 - **Icons**: Lucide React
 - **File Upload**: React Dropzone
 - **HTTP Client**: Axios
-- **API**: Freeimage.host & ImgBB
+- **API**: Freeimage.host, ImgBB & Gofile
 
 ## Getting Started
 
@@ -50,10 +51,18 @@ pnpm install
 cp .env.local.example .env.local
 ```
 
-4. Add your Freeimage.host API key to `.env.local`:
+4. Add your API keys to `.env.local`:
 ```env
-FREEIMAGE_API_KEY=your_api_key_here
+FREEIMAGE_API_KEY=your_freeimage_api_key_here
 FREEIMAGE_API_URL=https://freeimage.host/api/1/upload
+
+# ImgBB API Configuration
+IMGBB_API_KEY=your_imgbb_api_key_here
+IMGBB_API_URL=https://api.imgbb.com/1/upload
+
+# Gofile API Configuration
+GOFILE_API_TOKEN=your_gofile_api_token_here
+GOFILE_UPLOAD_URL=https://upload.gofile.io/uploadfile
 ```
 
 5. Run the development server:
@@ -73,12 +82,25 @@ pnpm dev
 
 ## API Integration
 
-This application uses the Freeimage.host API v1 for image hosting. The API provides:
+This application uses multiple APIs for file hosting:
 
+### Freeimage.host API v1
 - **Upload Endpoint**: `POST /api/1/upload`
 - **Supported Formats**: JPG, PNG, GIF, BMP, WEBP
 - **File Size Limit**: 128MB per image
 - **Response Format**: JSON with image details and URLs
+
+### ImgBB API
+- **Upload Endpoint**: `POST /api/upload/imgbb`
+- **Supported Formats**: JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF
+- **File Size Limit**: 32MB per image
+- **Response Format**: JSON with direct image URLs and viewer pages
+
+### Gofile API
+- **Upload Endpoint**: `POST /api/upload/gofile`
+- **Supported Formats**: ALL file types (images, documents, videos, archives, etc.)
+- **File Size Limit**: Unlimited
+- **Response Format**: JSON with download pages and direct links
 
 ## Environment Variables
 
@@ -86,6 +108,10 @@ This application uses the Freeimage.host API v1 for image hosting. The API provi
 |----------|-------------|----------|
 | `FREEIMAGE_API_KEY` | Your Freeimage.host API key | Yes |
 | `FREEIMAGE_API_URL` | Freeimage.host API endpoint | Yes |
+| `IMGBB_API_KEY` | Your ImgBB API key | Optional |
+| `IMGBB_API_URL` | ImgBB API endpoint | Optional |
+| `GOFILE_API_TOKEN` | Your Gofile API token | Optional |
+| `GOFILE_UPLOAD_URL` | Gofile upload endpoint | Optional |
 
 ## Development
 
@@ -100,13 +126,16 @@ This application uses the Freeimage.host API v1 for image hosting. The API provi
 
 ```
 ├── app/
-│   ├── api/upload/route.ts    # Server-side upload API
-│   ├── globals.css           # Global styles
-│   ├── layout.tsx            # Root layout
-│   └── page.tsx              # Main upload page
-├── public/                   # Static assets
-├── .env.local               # Environment variables
-└── package.json             # Dependencies and scripts
+│   ├── api/
+│   │   ├── upload/route.ts           # Freeimage.host upload API
+│   │   ├── upload/imgbb/route.ts     # ImgBB upload API
+│   │   └── upload/gofile/route.ts    # Gofile upload API
+│   ├── globals.css                   # Global styles
+│   ├── layout.tsx                    # Root layout
+│   └── page.tsx                      # Main upload page
+├── public/                           # Static assets
+├── .env.local                       # Environment variables
+└── package.json                     # Dependencies and scripts
 ```
 
 ## Contributing
@@ -124,6 +153,8 @@ This project is open source and available under the [MIT License](LICENSE).
 ## Acknowledgments
 
 - [Freeimage.host](https://freeimage.host) for providing the image hosting API
+- [ImgBB](https://imgbb.com) for providing the image hosting API
+- [Gofile](https://gofile.io) for providing the universal file hosting API
 - [Next.js](https://nextjs.org) for the React framework
 - [Tailwind CSS](https://tailwindcss.com) for styling
 - [Lucide React](https://lucide.dev) for icons

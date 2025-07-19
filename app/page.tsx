@@ -12,26 +12,34 @@ interface UploadedImage {
   filename: string;
   size_formatted: string;
   size: number;
-  width: number;
-  height: number;
+  width: number | null;
+  height: number | null;
   mime: string;
-  bits: number;
+  bits: number | null;
   channels: number | null;
-  ratio: number;
+  ratio: number | null;
   original_filename: string;
   thumb: {
     url: string;
-    width: number;
-    height: number;
+    width: number | null;
+    height: number | null;
     size_formatted: string;
   };
   medium: {
     url: string;
-    width: number;
-    height: number;
+    width: number | null;
+    height: number | null;
     size_formatted: string;
   };
-  provider: 'freeimage' | 'imgbb';
+  provider: 'freeimage' | 'imgbb' | 'gofile';
+  gofile_data?: {
+    fileId: string;
+    fileName: string;
+    downloadPage: string;
+    directLink: string;
+    folderId: string;
+    accountId: string;
+  };
 }
 
 interface UploadResponse {
@@ -42,7 +50,7 @@ interface UploadResponse {
   };
   image: UploadedImage;
   status_txt: string;
-  provider?: 'freeimage' | 'imgbb';
+  provider?: 'freeimage' | 'imgbb' | 'gofile';
 }
 
 export default function Home() {
@@ -52,8 +60,8 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
   const [showFullUrl, setShowFullUrl] = useState<string | null>(null);
-  const [selectedProvider, setSelectedProvider] = useState<'freeimage' | 'imgbb'>('freeimage');
-  const [filterProvider, setFilterProvider] = useState<'all' | 'freeimage' | 'imgbb'>('all');
+  const [selectedProvider, setSelectedProvider] = useState<'freeimage' | 'imgbb' | 'gofile'>('freeimage');
+  const [filterProvider, setFilterProvider] = useState<'all' | 'freeimage' | 'imgbb' | 'gofile'>('all');
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     setIsUploading(true);
@@ -71,7 +79,8 @@ export default function Home() {
         formData.append('file', file);
 
         // Choose API endpoint based on selected provider
-        const apiEndpoint = selectedProvider === 'imgbb' ? '/api/upload/imgbb' : '/api/upload';
+        const apiEndpoint = selectedProvider === 'imgbb' ? '/api/upload/imgbb' : 
+                           selectedProvider === 'gofile' ? '/api/upload/gofile' : '/api/upload';
 
         const response = await axios.post<UploadResponse>(apiEndpoint, formData, {
           headers: {
@@ -152,10 +161,10 @@ export default function Home() {
            {/* Provider Selection */}
            <div className="bg-white rounded-lg shadow-md p-4 max-w-md mx-auto mb-4">
              <h3 className="text-sm font-medium text-gray-700 mb-3">Choose Upload Provider:</h3>
-             <div className="flex space-x-2">
+             <div className="grid grid-cols-3 gap-2">
                <button
                  onClick={() => setSelectedProvider('freeimage')}
-                 className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                    selectedProvider === 'freeimage'
                      ? 'bg-blue-500 text-white'
                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -165,7 +174,7 @@ export default function Home() {
                </button>
                <button
                  onClick={() => setSelectedProvider('imgbb')}
-                 className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                    selectedProvider === 'imgbb'
                      ? 'bg-blue-500 text-white'
                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -173,11 +182,23 @@ export default function Home() {
                >
                  ImgBB
                </button>
+               <button
+                 onClick={() => setSelectedProvider('gofile')}
+                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                   selectedProvider === 'gofile'
+                     ? 'bg-blue-500 text-white'
+                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                 }`}
+               >
+                 Gofile
+               </button>
              </div>
              <div className="mt-2 text-xs text-gray-500">
                {selectedProvider === 'freeimage' 
                  ? 'Supports: JPG, PNG, GIF, BMP, WEBP (max 128MB)'
-                 : 'Supports: JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF (max 32MB)'
+                 : selectedProvider === 'imgbb'
+                 ? 'Supports: JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF (max 32MB)'
+                 : 'Supports: ALL file types (unlimited size)'
                }
              </div>
            </div>
@@ -220,7 +241,9 @@ export default function Home() {
                <p className="text-sm text-gray-500 mt-1">
                  {selectedProvider === 'freeimage' 
                    ? 'Supports: JPG, PNG, GIF, BMP, WEBP (max 128MB) - Original quality preserved'
-                   : 'Supports: JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF (max 32MB) - Original quality preserved'
+                   : selectedProvider === 'imgbb'
+                   ? 'Supports: JPG, PNG, GIF, BMP, WEBP, TIF, HEIC, AVIF (max 32MB) - Original quality preserved'
+                   : 'Supports: ALL file types (unlimited size) - Universal file hosting'
                  }
                </p>
              </div>
@@ -236,7 +259,8 @@ export default function Home() {
                        </span>
                        <div className="flex items-center space-x-2">
                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded">
-                           {selectedProvider === 'imgbb' ? 'ImgBB' : 'FreeImage'}
+                           {selectedProvider === 'imgbb' ? 'ImgBB' : 
+                            selectedProvider === 'gofile' ? 'Gofile' : 'FreeImage'}
                          </span>
                          <span className="text-sm text-gray-500">{progress}%</span>
                        </div>
@@ -275,12 +299,13 @@ export default function Home() {
                    <span className="text-sm text-gray-600">Filter:</span>
                    <select
                      value={filterProvider}
-                     onChange={(e) => setFilterProvider(e.target.value as 'all' | 'freeimage' | 'imgbb')}
+                     onChange={(e) => setFilterProvider(e.target.value as 'all' | 'freeimage' | 'imgbb' | 'gofile')}
                      className="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
                    >
                      <option value="all">All Providers</option>
                      <option value="freeimage">FreeImage.host</option>
                      <option value="imgbb">ImgBB</option>
+                     <option value="gofile">Gofile</option>
                    </select>
                  </div>
                  <button
@@ -317,7 +342,8 @@ export default function Home() {
                        {image.size_formatted || 'Unknown'}
                      </div>
                      <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
-                       {image.provider === 'imgbb' ? 'ImgBB' : 'FreeImage'}
+                       {image.provider === 'imgbb' ? 'ImgBB' : 
+                        image.provider === 'gofile' ? 'Gofile' : 'FreeImage'}
                      </div>
                    </div>
                   
@@ -381,9 +407,11 @@ export default function Home() {
                            target="_blank"
                            rel="noopener noreferrer"
                            className="text-center px-3 py-2 bg-gray-100 text-gray-700 text-xs rounded-lg hover:bg-gray-200 transition-colors"
-                           title={image.provider === 'imgbb' ? 'Opens ImgBB viewer page with sharing options' : 'Opens image viewer page'}
+                           title={image.provider === 'imgbb' ? 'Opens ImgBB viewer page with sharing options' : 
+                                 image.provider === 'gofile' ? 'Opens Gofile download page' : 'Opens image viewer page'}
                          >
-                           {image.provider === 'imgbb' ? '🌐 ImgBB Page' : 'Viewer'}
+                           {image.provider === 'imgbb' ? '🌐 ImgBB Page' : 
+                            image.provider === 'gofile' ? '📥 Download Page' : 'Viewer'}
                          </a>
                        </div>
                        
@@ -401,6 +429,24 @@ export default function Home() {
                            </a>
                            <p className="text-xs text-gray-500 mt-1 text-center">
                              Opens image directly in browser
+                           </p>
+                         </div>
+                       )}
+                       
+                       {/* Additional Direct Link button for Gofile */}
+                       {image.provider === 'gofile' && image.gofile_data?.directLink && (
+                         <div className="mt-2">
+                           <a
+                             href={image.gofile_data.directLink}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                             className="block w-full text-center px-3 py-2 bg-purple-100 text-purple-700 text-xs rounded-lg hover:bg-purple-200 transition-colors"
+                             title="Direct download link for the file"
+                           >
+                             🔗 Direct Download Link
+                           </a>
+                           <p className="text-xs text-gray-500 mt-1 text-center">
+                             Direct file download link
                            </p>
                          </div>
                        )}
@@ -474,13 +520,76 @@ export default function Home() {
                                </div>
                              )}
                            </div>
-                         </div>
+                                                  </div>
                        )}
                      </div>
                    </div>
-                </div>
-              ))}
-            </div>
+                   
+                   {/* Additional info for Gofile */}
+                   {image.provider === 'gofile' && image.gofile_data && (
+                     <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
+                       <div className="font-medium mb-1">Gofile Information:</div>
+                       <div className="space-y-1">
+                         <div className="flex justify-between items-center">
+                           <span>📁 File ID:</span>
+                           <span className="font-mono text-xs">{image.gofile_data.fileId}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                           <span>📂 Folder ID:</span>
+                           <span className="font-mono text-xs">{image.gofile_data.folderId}</span>
+                         </div>
+                         <div className="flex justify-between items-center">
+                           <span>🌐 Download Page:</span>
+                           <button
+                             onClick={() => toggleFullUrl(image.gofile_data!.downloadPage)}
+                             className="text-blue-600 hover:text-blue-800 font-mono text-xs"
+                           >
+                             {showFullUrl === image.gofile_data!.downloadPage ? 'Hide' : 'Show'} URL
+                           </button>
+                         </div>
+                         {showFullUrl === image.gofile_data!.downloadPage && (
+                           <div className="bg-white p-2 rounded border text-xs break-all relative">
+                             <div className="pr-8">{image.gofile_data!.downloadPage}</div>
+                             <button
+                               onClick={() => copyToClipboard(image.gofile_data!.downloadPage)}
+                               className="absolute top-1 right-1 text-blue-600 hover:text-blue-800"
+                               title="Copy URL"
+                             >
+                               <Copy className="w-3 h-3" />
+                             </button>
+                           </div>
+                         )}
+                         {image.gofile_data!.directLink && (
+                           <>
+                             <div className="flex justify-between items-center">
+                               <span>🔗 Direct Link:</span>
+                               <button
+                                 onClick={() => toggleFullUrl(image.gofile_data!.directLink)}
+                                 className="text-blue-600 hover:text-blue-800 font-mono text-xs"
+                               >
+                                 {showFullUrl === image.gofile_data!.directLink ? 'Hide' : 'Show'} URL
+                               </button>
+                             </div>
+                             {showFullUrl === image.gofile_data!.directLink && (
+                               <div className="bg-white p-2 rounded border text-xs break-all relative">
+                                 <div className="pr-8">{image.gofile_data!.directLink}</div>
+                                 <button
+                                   onClick={() => copyToClipboard(image.gofile_data!.directLink)}
+                                   className="absolute top-1 right-1 text-blue-600 hover:text-blue-800"
+                                   title="Copy URL"
+                                 >
+                                   <Copy className="w-3 h-3" />
+                                 </button>
+                               </div>
+                             )}
+                           </>
+                         )}
+                       </div>
+                     </div>
+                   )}
+                 </div>
+               ))}
+             </div>
           </div>
                  )}
          
@@ -510,6 +619,11 @@ export default function Home() {
                <div className="bg-yellow-50 p-3 rounded-lg">
                  <div className="font-medium text-yellow-800 mb-1">ImgBB URLs</div>
                  <div className="text-yellow-600">Direct image URLs (e.g., https://i.ibb.co/S73Gs1GG/ngerti-banget.jpg) for easy sharing</div>
+               </div>
+               
+               <div className="bg-purple-50 p-3 rounded-lg">
+                 <div className="font-medium text-purple-800 mb-1">Gofile Universal Hosting</div>
+                 <div className="text-purple-600">Supports ALL file types (images, documents, videos, archives) with unlimited size</div>
                </div>
              </div>
            </div>
